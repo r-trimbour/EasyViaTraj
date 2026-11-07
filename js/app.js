@@ -98,7 +98,7 @@
   }
 
   function loadDrugs() {
-    fetch("data/drugs.json?v=5")
+    fetch("data/drugs.json?v=6")
       .then(function (r) { return r.json(); })
       .then(function (data) {
         state.drugs = data.drugs || [];
@@ -138,6 +138,18 @@
       b.addEventListener("click", function () { addRow(label, f); });
       el.favList.appendChild(b);
     });
+    fitFavorites();
+    window.addEventListener("resize", fitFavorites);
+  }
+
+  // Limite la hauteur visible du panneau à FAV_VISIBLE médicaments ; le reste défile dans le panneau.
+  var FAV_VISIBLE = 12;
+  function fitFavorites() {
+    el.favList.style.maxHeight = "";
+    var btns = el.favList.querySelectorAll(".fav-btn");
+    if (btns.length <= FAV_VISIBLE) return;
+    var last = btns[FAV_VISIBLE - 1];
+    el.favList.style.maxHeight = (last.offsetTop + last.offsetHeight + 2) + "px";
   }
 
   // ---------- Recherche ----------

@@ -263,7 +263,20 @@ button, input { font: inherit; color: inherit; }
   letter-spacing: .4px;
   color: var(--ink-soft);
 }
-.fav-list { display: flex; flex-direction: column; gap: 2px; }
+.fav-list {
+  position: relative;            /* repère pour mesurer la hauteur des 12 premiers */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;              /* défilement propre au panneau */
+  overscroll-behavior: contain;  /* la page ne défile pas en bout de liste */
+  padding-right: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.fav-list::-webkit-scrollbar { width: 6px; }
+.fav-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+.fav-list .fav-cat { position: sticky; top: 0; background: var(--panel); z-index: 1; }
 .fav-cat {
   margin: 7px 0 2px;
   font-size: .7rem;
