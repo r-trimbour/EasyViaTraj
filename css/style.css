@@ -88,6 +88,7 @@ button, input { font: inherit; color: inherit; }
 .result-item:hover { background: var(--on-bg); }
 .result-class { font-size: .85rem; color: var(--ink-soft); white-space: nowrap; }
 .result-free { color: var(--primary); font-style: italic; }
+.result-alias { font-weight: 400; font-size: .88rem; color: var(--ink-soft); font-style: italic; }
 .result-error { padding: 9px 12px; color: var(--danger); }
 
 /* ---------- Tableau ---------- */

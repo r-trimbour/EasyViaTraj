@@ -116,10 +116,12 @@
     el.searchResults.innerHTML = "";
     results.forEach(function (item) {
       var label = R.buildLabel(item.drug);
+      var alias = S.matchedAlias(item, query);
       var div = document.createElement("div");
       div.className = "result-item";
       div.innerHTML =
-        '<span class="result-label">' + escapeHtml(label) + "</span>" +
+        '<span class="result-label">' + escapeHtml(label) +
+        (alias ? ' <span class="result-alias">= ' + escapeHtml(alias) + "</span>" : "") + "</span>" +
         '<span class="result-class">' + escapeHtml(item.drug.class || "") + "</span>";
       div.addEventListener("click", function () { addRow(label); resetSearch(); });
       el.searchResults.appendChild(div);

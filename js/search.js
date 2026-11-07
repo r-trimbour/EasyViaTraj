@@ -17,13 +17,28 @@
   function buildIndex(drugs) {
     return (drugs || []).map(function (d, i) {
       var label = d.name + (d.strength ? " " + d.strength + (d.strengthUnit ? " " + d.strengthUnit : "") : "");
+      var aliases = d.aliases || [];
       return {
         id: i,
         drug: d,
         label: label.replace(/\s+/g, " ").trim(),
-        key: normalize(label + " " + (d.class || ""))
+        labelKey: normalize(label),
+        aliases: aliases,
+        key: normalize(label + " " + (d.class || "") + " " + aliases.join(" "))
       };
     });
+  }
+
+  // Si la requête ne correspond pas au libellé, renvoie l'alias (sel, nom commercial) qui correspond.
+  function matchedAlias(item, query) {
+    var terms = normalize(query).split(/\s+/).filter(Boolean);
+    if (terms.every(function (t) { return item.labelKey.indexOf(t) !== -1; })) return null;
+    var best = null;
+    item.aliases.forEach(function (a) {
+      var ak = normalize(a);
+      if (!best && terms.some(function (t) { return t.length > 2 && ak.indexOf(t) !== -1; })) best = a;
+    });
+    return best;
   }
 
   // Recherche tous-les-mots : chaque terme de la requête doit apparaître.
@@ -50,6 +65,7 @@
   global.EVT.search = {
     normalize: normalize,
     buildIndex: buildIndex,
-    search: search
+    search: search,
+    matchedAlias: matchedAlias
   };
 })(typeof window !== "undefined" ? window : this);
