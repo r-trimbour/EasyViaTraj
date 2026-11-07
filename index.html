@@ -9,49 +9,71 @@
 </head>
 <body>
   <header class="app-header">
-    <h1>EasyViaTraj</h1>
-    <p class="subtitle">Construire la liste des traitements pour ViaTrajectoire</p>
-    <p class="privacy">🔒 Tout se passe dans votre navigateur. Aucune donnée patient n'est envoyée ni enregistrée.</p>
+    <div class="header-inner">
+      <h1>EasyViaTraj</h1>
+      <span class="subtitle">Liste des traitements pour ViaTrajectoire</span>
+      <span class="privacy">🔒 100 % navigateur — aucune donnée transmise</span>
+    </div>
   </header>
 
   <main class="app-main">
-    <!-- Zone 1 : construction -->
-    <section class="builder" aria-label="Choix des médicaments">
-      <div class="search-box">
-        <label for="searchInput" class="search-label">Ajouter un médicament</label>
-        <input
-          id="searchInput"
-          type="text"
-          class="search-input"
-          placeholder="Tapez quelques lettres (ex : parac, lovenox, metfor…)"
-          autocomplete="off"
-          aria-autocomplete="list"
-          aria-controls="searchResults"
-        />
-        <div id="searchResults" class="search-results" role="listbox" hidden></div>
-      </div>
+    <div class="work">
+      <section class="builder" aria-label="Choix des médicaments">
+        <div class="search-box">
+          <input
+            id="searchInput"
+            type="text"
+            class="search-input"
+            placeholder="Rechercher un médicament (ex : parac, lovenox, metfor…) ou saisir un nom libre"
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="searchResults"
+          />
+          <div id="searchResults" class="search-results" role="listbox" hidden></div>
+        </div>
 
-      <div id="rows" class="rows"></div>
-      <p id="emptyHint" class="empty-hint">Aucun médicament pour l'instant. Cherchez-en un ci-dessus pour commencer.</p>
-    </section>
+        <div class="table-wrap">
+          <table class="med-table" id="medTable">
+            <thead>
+              <tr>
+                <th class="col-name">Médicament</th>
+                <th class="col-slot">Matin</th>
+                <th class="col-slot">Midi</th>
+                <th class="col-slot">Soir</th>
+                <th class="col-time">Autre heure</th>
+                <th class="col-cond">si (condition)</th>
+                <th class="col-until">jusqu'au</th>
+                <th class="col-del" aria-label="Supprimer"></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <p id="emptyHint" class="empty-hint">Aucun médicament. Recherchez-en un, saisissez un nom libre, ou cliquez un médicament fréquent →</p>
+      </section>
 
-    <!-- Zone 2 : sortie -->
+      <aside class="favorites" aria-label="Médicaments fréquents">
+        <h2>Fréquents</h2>
+        <div id="favList" class="fav-list"></div>
+      </aside>
+    </div>
+
     <section class="output-zone" aria-label="Texte à coller">
       <div class="output-head">
         <h2>Texte à coller dans ViaTrajectoire</h2>
         <div class="output-actions">
-          <button id="regenBtn" type="button" class="btn-regen" title="Reconstruire la liste à partir des médicaments">Régénérer</button>
+          <button id="regenBtn" type="button" class="btn-regen" title="Reconstruire la liste à partir du tableau">Régénérer</button>
           <button id="copyBtn" type="button" class="btn-copy" title="Copier tout le texte">📋 Copier</button>
           <span id="copyStatus" class="copy-status" aria-live="polite"></span>
         </div>
       </div>
-      <p id="syncHint" class="sync-hint" hidden>✏️ Zone modifiée à la main : vos ajouts sont conservés. « Régénérer » reconstruit tout à partir des médicaments.</p>
+      <p id="syncHint" class="sync-hint" hidden>✏️ Zone modifiée à la main : vos ajouts sont conservés. « Régénérer » reconstruit tout à partir du tableau.</p>
       <textarea id="output" class="output" spellcheck="false" aria-label="Texte de l'ordonnance, modifiable"></textarea>
     </section>
   </main>
 
   <footer class="app-footer">
-    <p>Outil d'aide à la saisie — ne remplace pas la prescription médicale. Vérifiez toujours le texte avant de le coller.</p>
+    <span>Outil d'aide à la saisie — ne remplace pas la prescription médicale. Vérifiez toujours le texte avant de le coller.</span>
   </footer>
 
   <script src="js/render.js"></script>

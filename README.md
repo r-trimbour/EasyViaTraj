@@ -23,12 +23,14 @@ médicaments sélectionnés.
 ### Format du texte produit
 
 ```
-Paracétamol 1000 mg : 1 cp, 0, 1 cp si EVA > 3 jusqu'au 15/11/2026
-Énoxaparine (Lovenox) 4000 UI : 1 injection à 18h00
+Paracétamol, 1000 mg (cp) : 1, 0, 1 si EVA > 3 jusqu'au 15/11/2026
+Énoxaparine (Lovenox), 4000 UI (injection) : 1 à 18h00
 ```
 
+- Libellé : `Nom, dosage (forme)` — la forme galénique n'apparaît qu'une fois.
 - Créneaux standard : 3 positions (matin, midi, soir), `0` si non pris.
-- Heure précise : `<dose> <forme> à HHhMM`.
+- Heure précise : `<dose> à HHhMM`.
+- Médicament absent de la base : saisie libre depuis la recherche ; le libellé reste modifiable dans le tableau.
 
 ## Lancer en local
 

@@ -224,18 +224,26 @@ EasyViaTraj/
 ## 9. Format decisions — LOCKED (owner, 2026-11-07)
 
 1. **Inactive slot:** always render the 3 standard positions; inactive = `0`.
-   → `Paracétamol 1000 mg : 1 cp, 0, 1 cp`
-2. **Dose = count + galenic unit** (`cp`, `gélule`, `sachet`, `injection`, …).
-   → `1 cp, 1 cp, 1 cp`
+   → `Paracétamol, 1000 mg (cp) : 1, 0, 1`
+2. **Galenic form stated once, in the label:** `Nom, dosage (forme)`; doses are bare
+   numbers. (Revised 2026-11-07 — replaces "count + unit per slot".)
 3. **`jusqu'au` date = `JJ/MM/AAAA`.** → `jusqu'au 15/11/2026`
 4. **Mixed standard + custom time:** triplet then custom, comma-joined.
-   → `Paracétamol 1000 mg : 1 cp, 1 cp, 1 cp, 1 cp à 22h00`
-5. **Custom time rendering:** `<n> <galénique> à <HHhMM>` → `1 injection à 18h00`
+   → `Paracétamol, 1000 mg (cp) : 1, 1, 1, 1 à 22h00`
+5. **Custom time rendering:** `<n> à <HHhMM>` → `1 à 18h00`
 6. **Decimals use a dot** (`0.5`) to avoid clashing with the comma slot separator.
 7. **Output-area edit behaviour:** auto-sync until the user types in the area; then
    lock full rewrite and preserve manual text. Row controls still update *their own
    line in place* (matched via a stored anchor). A **Régénérer** button rebuilds all
    lines from the rows on demand (with confirmation, since it discards manual edits).
+
+### UI decisions (owner feedback, 2026-11-07)
+- Sober, professional look: full page width, square corners, no playful styling.
+- Dense **table**: one compact row per drug; columns Médicament | Matin | Midi | Soir |
+  Autre heure | si | jusqu'au. Slots **unticked by default**: tick, then set the dose.
+- Drug label is an editable cell; **free-text entry** for drugs missing from the base.
+- Small **"Fréquents"** panel on the right (paracétamol, néfopam, énoxaparine,
+  apixaban, insulines, statines) for one-click add.
 
 ### Still open (non-blocking)
 - **AP-HP livret thérapeutique:** can a curated shortlist be shared? Else filtered BDPM.

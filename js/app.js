@@ -1,5 +1,5 @@
 /*
- * app.js — logique d'interface d'EasyViaTraj.
+ * app.js — logique d'interface d'EasyViaTraj (tableau compact).
  * Dépend de render.js et search.js (chargés avant).
  */
 (function () {
@@ -8,14 +8,27 @@
   var R = window.EVT.render;
   var S = window.EVT.search;
 
+  // Médicaments fréquents (panneau de droite) : [nom, dosage] tels que dans data/drugs.json
+  var FAVORITES = [
+    ["Paracétamol", "1000"],
+    ["Néfopam (Acupan)", "20"],
+    ["Énoxaparine (Lovenox)", "4000"],
+    ["Apixaban (Eliquis)", "2.5"],
+    ["Apixaban (Eliquis)", "5"],
+    ["Insuline glargine (Lantus)", "100"],
+    ["Insuline asparte (Novorapid)", "100"],
+    ["Atorvastatine", "20"],
+    ["Rosuvastatine", "10"]
+  ];
+
   var state = {
+    drugs: [],
     index: [],
     rows: [],
-    outputLocked: false, // passe à true dès que l'utilisateur tape dans la zone de texte
+    outputLocked: false, // true dès que l'utilisateur tape dans la zone de texte
     seq: 0
   };
 
-  // --- Références DOM ---
   var el = {};
   function $(id) { return document.getElementById(id); }
 
@@ -26,6 +39,7 @@
     el.searchResults = $("searchResults");
     el.rows = $("rows");
     el.emptyHint = $("emptyHint");
+    el.favList = $("favList");
     el.output = $("output");
     el.copyBtn = $("copyBtn");
     el.regenBtn = $("regenBtn");
@@ -37,9 +51,7 @@
     el.searchInput.addEventListener("input", onSearchInput);
     el.searchInput.addEventListener("keydown", onSearchKeydown);
     document.addEventListener("click", function (e) {
-      if (!el.searchResults.contains(e.target) && e.target !== el.searchInput) {
-        closeResults();
-      }
+      if (!el.searchResults.contains(e.target) && e.target !== el.searchInput) closeResults();
     });
 
     el.output.addEventListener("input", function () {
@@ -54,55 +66,83 @@
     fetch("data/drugs.json")
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        state.index = S.buildIndex(data.drugs || []);
+        state.drugs = data.drugs || [];
+        state.index = S.buildIndex(state.drugs);
+        renderFavorites();
       })
       .catch(function () {
         el.searchResults.innerHTML =
-          '<div class="result-error">Impossible de charger la base de médicaments.' +
-          ' Ouvrez le site via GitHub Pages ou un serveur local (pas en fichier local).</div>';
+          '<div class="result-error">Impossible de charger la base de médicaments ' +
+          "(ouvrir via GitHub Pages ou un serveur local). La saisie libre reste possible.</div>";
         el.searchResults.hidden = false;
       });
   }
 
-  // ---------- Recherche / autocomplétion ----------
+  // ---------- Fréquents ----------
+  function renderFavorites() {
+    el.favList.innerHTML = "";
+    FAVORITES.forEach(function (f) {
+      var drug = state.drugs.find(function (d) { return d.name === f[0] && d.strength === f[1]; });
+      if (!drug) return;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "fav-btn";
+      b.textContent = R.buildLabel(drug);
+      b.title = "Ajouter " + R.buildLabel(drug);
+      b.addEventListener("click", function () { addRow(R.buildLabel(drug)); });
+      el.favList.appendChild(b);
+    });
+  }
+
+  // ---------- Recherche ----------
   function onSearchInput() {
     var q = el.searchInput.value;
     if (!q.trim()) { closeResults(); return; }
-    var results = S.search(state.index, q, 12);
-    renderResults(results);
+    renderResults(S.search(state.index, q, 15), q.trim());
   }
 
   function onSearchKeydown(e) {
     if (e.key === "Enter") {
+      e.preventDefault();
       var first = el.searchResults.querySelector(".result-item");
       if (first) first.click();
+      else if (el.searchInput.value.trim()) addFree(el.searchInput.value.trim());
     } else if (e.key === "Escape") {
       closeResults();
     }
   }
 
-  function renderResults(results) {
+  function renderResults(results, query) {
     el.searchResults.innerHTML = "";
-    if (!results.length) {
-      el.searchResults.innerHTML = '<div class="result-empty">Aucun résultat</div>';
-      el.searchResults.hidden = false;
-      return;
-    }
     results.forEach(function (item) {
+      var label = R.buildLabel(item.drug);
       var div = document.createElement("div");
       div.className = "result-item";
       div.innerHTML =
-        '<span class="result-label">' + escapeHtml(item.label) + "</span>" +
+        '<span class="result-label">' + escapeHtml(label) + "</span>" +
         '<span class="result-class">' + escapeHtml(item.drug.class || "") + "</span>";
-      div.addEventListener("click", function () {
-        addRow(item.drug);
-        el.searchInput.value = "";
-        closeResults();
-        el.searchInput.focus();
-      });
+      div.addEventListener("click", function () { addRow(label); resetSearch(); });
       el.searchResults.appendChild(div);
     });
+    // Saisie libre : toujours proposée, pour les médicaments absents de la base
+    var free = document.createElement("div");
+    free.className = "result-item result-free";
+    free.innerHTML = '<span class="result-label">+ Ajouter « ' + escapeHtml(query) +
+      " » (saisie libre)</span>";
+    free.addEventListener("click", function () { addFree(query); });
+    el.searchResults.appendChild(free);
     el.searchResults.hidden = false;
+  }
+
+  function addFree(text) {
+    addRow(text);
+    resetSearch();
+  }
+
+  function resetSearch() {
+    el.searchInput.value = "";
+    closeResults();
+    el.searchInput.focus();
   }
 
   function closeResults() {
@@ -110,18 +150,15 @@
     el.searchResults.innerHTML = "";
   }
 
-  // ---------- Modèle de ligne ----------
-  function makeRow(drug) {
+  // ---------- Modèle ----------
+  function makeRow(label) {
     return {
       id: "r" + (++state.seq),
-      name: drug.name,
-      strength: drug.strength || "",
-      strengthUnit: drug.strengthUnit || "",
-      form: drug.form || "",
+      label: label,
       slots: {
-        matin: { active: true, dose: 1 },
-        midi: { active: true, dose: 1 },
-        soir: { active: true, dose: 1 }
+        matin: { active: false, dose: 1 },
+        midi: { active: false, dose: 1 },
+        soir: { active: false, dose: 1 }
       },
       customTimes: [],
       pendingCustom: null,
@@ -131,35 +168,27 @@
     };
   }
 
-  function addRow(drug) {
-    var row = makeRow(drug);
+  function addRow(label) {
+    var row = makeRow(label);
     row.lastRendered = R.renderLine(row);
     state.rows.push(row);
     el.rows.appendChild(buildRowEl(row));
     el.emptyHint.hidden = true;
-
-    if (!state.outputLocked) {
-      rebuildOutput();
-    } else {
-      appendLine(row.lastRendered);
-    }
+    if (!state.outputLocked) rebuildOutput();
+    else appendLine(row.lastRendered);
   }
 
   function removeRow(row) {
     var i = state.rows.indexOf(row);
     if (i !== -1) state.rows.splice(i, 1);
-    var node = document.querySelector('[data-row="' + row.id + '"]');
+    var node = el.rows.querySelector('[data-row="' + row.id + '"]');
     if (node) node.remove();
     if (!state.rows.length) el.emptyHint.hidden = false;
-
-    if (!state.outputLocked) {
-      rebuildOutput();
-    } else {
-      removeLine(row.lastRendered);
-    }
+    if (!state.outputLocked) rebuildOutput();
+    else removeLine(row.lastRendered);
   }
 
-  // ---------- Synchronisation sortie ----------
+  // ---------- Synchronisation de la zone de texte ----------
   function rebuildOutput() {
     el.output.value = R.renderAll(state.rows);
     state.rows.forEach(function (r) { r.lastRendered = R.renderLine(r); });
@@ -168,7 +197,7 @@
   }
 
   function appendLine(line) {
-    el.output.value = el.output.value ? el.output.value + "\n" + line : line;
+    el.output.value = el.output.value ? el.output.value.replace(/\n*$/, "") + "\n" + line : line;
   }
 
   function removeLine(line) {
@@ -180,13 +209,10 @@
     }
   }
 
-  // Met à jour la ligne d'une row (en place si zone verrouillée).
+  // Met à jour la ligne du médicament ; en place si la zone a été modifiée à la main.
   function syncRow(row) {
+    if (!state.outputLocked) { rebuildOutput(); return; }
     var newLine = R.renderLine(row);
-    if (!state.outputLocked) {
-      rebuildOutput();
-      return;
-    }
     var lines = el.output.value.split("\n");
     var idx = lines.indexOf(row.lastRendered);
     if (idx !== -1) {
@@ -194,289 +220,221 @@
       el.output.value = lines.join("\n");
       row.lastRendered = newLine;
     } else {
-      // La ligne a été modifiée/supprimée à la main : on respecte l'édition manuelle.
-      el.syncHint.hidden = false;
+      el.syncHint.hidden = false; // ligne modifiée à la main : on respecte l'édition
     }
   }
 
   function regenerate() {
-    if (state.outputLocked && el.output.value.trim()) {
-      if (!confirm("Régénérer la liste à partir des médicaments ? Les modifications manuelles de la zone de texte seront perdues.")) {
-        return;
-      }
+    if (state.outputLocked && el.output.value.trim() &&
+        !confirm("Régénérer à partir du tableau ? Les modifications manuelles de la zone de texte seront perdues.")) {
+      return;
     }
     rebuildOutput();
   }
 
-  // ---------- Construction du DOM d'une ligne ----------
+  // ---------- Ligne du tableau ----------
   function buildRowEl(row) {
-    var card = document.createElement("div");
-    card.className = "drug-card";
-    card.setAttribute("data-row", row.id);
+    var tr = document.createElement("tr");
+    tr.setAttribute("data-row", row.id);
 
-    // En-tête : nom + bouton supprimer
-    var head = document.createElement("div");
-    head.className = "drug-head";
-    var title = document.createElement("div");
-    title.className = "drug-title";
-    title.textContent = R.renderLine ? headerText(row) : row.name;
-    var del = iconBtn("✕", "Supprimer ce médicament", "btn-del");
-    del.addEventListener("click", function () { removeRow(row); });
-    head.appendChild(title);
-    head.appendChild(del);
-    card.appendChild(head);
+    // Médicament (libellé modifiable)
+    var tdName = td("col-name");
+    var name = document.createElement("input");
+    name.type = "text";
+    name.className = "name-input";
+    name.value = row.label;
+    name.title = "Libellé modifiable (nom, dosage, forme)";
+    name.addEventListener("input", function () { row.label = name.value; syncRow(row); });
+    tdName.appendChild(name);
+    tr.appendChild(tdName);
 
-    // Créneaux standard
-    var slots = document.createElement("div");
-    slots.className = "slots";
-    ["matin", "midi", "soir"].forEach(function (key) {
-      slots.appendChild(buildSlot(row, key));
+    // Matin / Midi / Soir
+    R.SLOT_ORDER.forEach(function (key) { tr.appendChild(buildSlotCell(row, key)); });
+
+    // Autre heure
+    var tdTime = td("col-time");
+    renderCustomTimes(row, tdTime);
+    tr.appendChild(tdTime);
+
+    // si (condition)
+    var tdCond = td("col-cond");
+    var condWrap = document.createElement("div");
+    condWrap.className = "cond-wrap";
+    var cond = document.createElement("input");
+    cond.type = "text";
+    cond.className = "cell-input";
+    cond.placeholder = "—";
+    cond.addEventListener("input", function () {
+      row.condition = cond.value.trim() || null;
+      syncRow(row);
     });
-    card.appendChild(slots);
+    var preset = document.createElement("button");
+    preset.type = "button";
+    preset.className = "btn-mini";
+    preset.textContent = "EVA > 3";
+    preset.title = "Insérer « si EVA > 3 »";
+    preset.addEventListener("click", function () {
+      cond.value = "EVA > 3";
+      row.condition = "EVA > 3";
+      syncRow(row);
+    });
+    condWrap.appendChild(cond);
+    condWrap.appendChild(preset);
+    tdCond.appendChild(condWrap);
+    tr.appendChild(tdCond);
 
-    // Heures précises
-    var custom = document.createElement("div");
-    custom.className = "custom-times";
-    custom.setAttribute("data-custom", row.id);
-    card.appendChild(custom);
-    renderCustomTimes(row, custom);
+    // jusqu'au
+    var tdUntil = td("col-until");
+    var until = document.createElement("input");
+    until.type = "date";
+    until.className = "cell-input";
+    until.addEventListener("input", function () { row.until = until.value || null; syncRow(row); });
+    tdUntil.appendChild(until);
+    tr.appendChild(tdUntil);
 
-    // Conditions optionnelles : si / jusqu'au
-    card.appendChild(buildConditions(row));
+    // Supprimer
+    var tdDel = td("col-del");
+    var del = btn("✕", "Supprimer ce médicament", "btn-del");
+    del.addEventListener("click", function () { removeRow(row); });
+    tdDel.appendChild(del);
+    tr.appendChild(tdDel);
 
-    return card;
+    return tr;
   }
 
-  function headerText(row) {
-    var t = row.name;
-    if (row.strength) t += " " + row.strength + (row.strengthUnit ? " " + row.strengthUnit : "");
-    return t;
-  }
-
-  function buildSlot(row, key) {
-    var labels = { matin: "Matin", midi: "Midi", soir: "Soir" };
-    var wrap = document.createElement("div");
-    wrap.className = "slot";
+  // Case à cocher ; une fois cochée, la dose devient réglable.
+  function buildSlotCell(row, key) {
     var slot = row.slots[key];
+    var cell = td("col-slot");
+    var wrap = document.createElement("div");
+    wrap.className = "slot-wrap";
 
-    var toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "slot-toggle" + (slot.active ? " on" : "");
-    toggle.textContent = labels[key];
+    var check = document.createElement("input");
+    check.type = "checkbox";
+    check.className = "slot-check";
+    check.checked = slot.active;
+    check.setAttribute("aria-label", key);
 
     var stepper = buildStepper(
       function () { return slot.dose; },
-      function (v) { slot.dose = v; },
-      row,
-      row.form
+      function (v) { slot.dose = v; syncRow(row); }
     );
-    stepper.classList.toggle("hidden", !slot.active);
+    stepper.hidden = !slot.active;
 
-    toggle.addEventListener("click", function () {
-      slot.active = !slot.active;
-      toggle.classList.toggle("on", slot.active);
-      stepper.classList.toggle("hidden", !slot.active);
+    check.addEventListener("change", function () {
+      slot.active = check.checked;
+      stepper.hidden = !slot.active;
+      cell.classList.toggle("is-on", slot.active);
       syncRow(row);
     });
 
-    wrap.appendChild(toggle);
+    wrap.appendChild(check);
     wrap.appendChild(stepper);
-    return wrap;
+    cell.appendChild(wrap);
+    return cell;
   }
 
-  // Un compteur de dose +/- avec saisie directe. getter/setter sur la donnée.
-  function buildStepper(get, set, row, form) {
+  // Stepper compact − [n] +   (pas de 0.5)
+  function buildStepper(get, set) {
     var box = document.createElement("div");
     box.className = "stepper";
-
-    var minus = iconBtn("−", "Diminuer", "btn-step");
+    var minus = btn("−", "Diminuer", "btn-step");
     var input = document.createElement("input");
-    input.type = "number";
-    input.step = "0.5";
-    input.min = "0";
+    input.type = "text";
+    input.inputMode = "decimal";
     input.className = "dose-input";
-    input.value = get();
-    var unit = document.createElement("span");
-    unit.className = "dose-unit";
-    unit.textContent = form || "";
-    var plus = iconBtn("+", "Augmenter", "btn-step");
+    input.value = R.formatNumber(get());
+    var plus = btn("+", "Augmenter", "btn-step");
 
     function commit(v) {
-      if (v < 0) v = 0;
+      if (isNaN(v) || v < 0) v = 0;
+      v = Math.round(v * 100) / 100;
+      input.value = R.formatNumber(v);
       set(v);
-      input.value = v;
-      syncRow(row);
     }
-    minus.addEventListener("click", function () { commit(round(get() - 0.5)); });
-    plus.addEventListener("click", function () { commit(round(get() + 0.5)); });
+    minus.addEventListener("click", function () { commit(get() - 0.5); });
+    plus.addEventListener("click", function () { commit(get() + 0.5); });
     input.addEventListener("change", function () {
-      var v = parseFloat(input.value.replace(",", "."));
-      commit(isNaN(v) ? 0 : v);
+      commit(parseFloat(input.value.replace(",", ".")));
     });
 
     box.appendChild(minus);
     box.appendChild(input);
-    if (form) box.appendChild(unit);
     box.appendChild(plus);
     return box;
   }
 
-  function round(v) { return Math.round(v * 100) / 100; }
-
-  // ---------- Heures précises ("Autre heure") ----------
-  function renderCustomTimes(row, container) {
-    container.innerHTML = "";
+  // ---------- Autre heure ----------
+  function renderCustomTimes(row, cell) {
+    cell.innerHTML = "";
+    var wrap = document.createElement("div");
+    wrap.className = "time-wrap";
 
     row.customTimes.forEach(function (ct, i) {
-      var chip = document.createElement("div");
+      var chip = document.createElement("span");
       chip.className = "time-chip";
-      chip.innerHTML = "<span>" +
-        escapeHtml(formatDose(ct.dose, row.form)) + " à " + escapeHtml(R.formatTimeFr(ct.time)) + "</span>";
-      var rm = iconBtn("✕", "Retirer cette heure", "btn-del-sm");
+      chip.textContent = R.formatNumber(ct.dose) + " à " + R.formatTimeFr(ct.time);
+      var rm = btn("✕", "Retirer cette heure", "btn-chip-del");
       rm.addEventListener("click", function () {
         row.customTimes.splice(i, 1);
-        renderCustomTimes(row, container);
+        renderCustomTimes(row, cell);
         syncRow(row);
       });
       chip.appendChild(rm);
-      container.appendChild(chip);
+      wrap.appendChild(chip);
     });
 
     if (row.pendingCustom) {
-      container.appendChild(buildPendingCustom(row, container));
+      wrap.appendChild(buildPending(row, cell));
     } else {
-      var addBtn = document.createElement("button");
-      addBtn.type = "button";
-      addBtn.className = "slot-toggle add-time";
-      addBtn.textContent = "+ Autre heure";
-      addBtn.addEventListener("click", function () {
+      var add = btn("+ heure", "Ajouter une heure précise", "btn-mini");
+      add.addEventListener("click", function () {
         row.pendingCustom = { time: "08:00", dose: 1 };
-        renderCustomTimes(row, container);
+        renderCustomTimes(row, cell);
       });
-      container.appendChild(addBtn);
+      wrap.appendChild(add);
     }
+    cell.appendChild(wrap);
   }
 
-  function buildPendingCustom(row, container) {
-    var panel = document.createElement("div");
-    panel.className = "pending-time";
+  function buildPending(row, cell) {
+    var p = document.createElement("span");
+    p.className = "pending";
 
-    var timeInput = document.createElement("input");
-    timeInput.type = "time";
-    timeInput.className = "time-input";
-    timeInput.value = row.pendingCustom.time;
-    timeInput.addEventListener("change", function () {
-      row.pendingCustom.time = timeInput.value || "08:00";
-    });
-
-    var stepper = buildStepperPlain(
+    var stepper = buildStepper(
       function () { return row.pendingCustom.dose; },
-      function (v) { row.pendingCustom.dose = v; },
-      row.form
+      function (v) { row.pendingCustom.dose = v; }
     );
+    var a = document.createElement("span");
+    a.className = "pending-a";
+    a.textContent = "à";
 
-    var valid = document.createElement("button");
-    valid.type = "button";
-    valid.className = "btn-valid";
-    valid.textContent = "Valider";
-    valid.addEventListener("click", function () {
+    var time = document.createElement("input");
+    time.type = "time";
+    time.className = "cell-input time-input";
+    time.value = row.pendingCustom.time;
+    time.step = 900; // pas de 15 min avec les flèches
+    time.addEventListener("change", function () { row.pendingCustom.time = time.value || "08:00"; });
+
+    var ok = btn("Valider", "Valider cette heure", "btn-ok");
+    ok.addEventListener("click", function () {
       row.customTimes.push({ time: row.pendingCustom.time, dose: row.pendingCustom.dose });
       row.pendingCustom = null;
-      renderCustomTimes(row, container);
+      renderCustomTimes(row, cell);
       syncRow(row);
     });
-
-    var cancel = iconBtn("✕", "Annuler", "btn-del-sm");
+    var cancel = btn("✕", "Annuler", "btn-chip-del");
     cancel.addEventListener("click", function () {
       row.pendingCustom = null;
-      renderCustomTimes(row, container);
+      renderCustomTimes(row, cell);
     });
 
-    var label = document.createElement("span");
-    label.className = "pending-label";
-    label.textContent = "à";
-
-    panel.appendChild(stepper);
-    panel.appendChild(label);
-    panel.appendChild(timeInput);
-    panel.appendChild(valid);
-    panel.appendChild(cancel);
-    return panel;
-  }
-
-  // Stepper sans row (pour l'éditeur en attente) — ne synchronise pas la sortie.
-  function buildStepperPlain(get, set, form) {
-    var box = document.createElement("div");
-    box.className = "stepper";
-    var minus = iconBtn("−", "Diminuer", "btn-step");
-    var input = document.createElement("input");
-    input.type = "number"; input.step = "0.5"; input.min = "0";
-    input.className = "dose-input"; input.value = get();
-    var unit = document.createElement("span");
-    unit.className = "dose-unit"; unit.textContent = form || "";
-    var plus = iconBtn("+", "Augmenter", "btn-step");
-    function commit(v) { if (v < 0) v = 0; set(v); input.value = v; }
-    minus.addEventListener("click", function () { commit(round(get() - 0.5)); });
-    plus.addEventListener("click", function () { commit(round(get() + 0.5)); });
-    input.addEventListener("change", function () {
-      var v = parseFloat(input.value.replace(",", ".")); commit(isNaN(v) ? 0 : v);
-    });
-    box.appendChild(minus); box.appendChild(input);
-    if (form) box.appendChild(unit); box.appendChild(plus);
-    return box;
-  }
-
-  function formatDose(dose, form) {
-    var d = Number.isInteger(dose) ? String(dose) : String(dose);
-    return form ? d + " " + form : d;
-  }
-
-  // ---------- Conditions (si / jusqu'au) ----------
-  function buildConditions(row) {
-    var wrap = document.createElement("div");
-    wrap.className = "conditions";
-
-    // si ...
-    var siWrap = document.createElement("label");
-    siWrap.className = "cond";
-    siWrap.innerHTML = '<span class="cond-key">si</span>';
-    var siInput = document.createElement("input");
-    siInput.type = "text";
-    siInput.className = "cond-input";
-    siInput.placeholder = "condition (ex : EVA > 3)";
-    siInput.addEventListener("input", function () {
-      row.condition = siInput.value.trim() || null;
-      syncRow(row);
-    });
-    var siDefault = document.createElement("button");
-    siDefault.type = "button";
-    siDefault.className = "preset-btn";
-    siDefault.textContent = "si EVA > 3";
-    siDefault.title = "Insérer la condition par défaut";
-    siDefault.addEventListener("click", function () {
-      siInput.value = "EVA > 3";
-      row.condition = "EVA > 3";
-      syncRow(row);
-    });
-    siWrap.appendChild(siInput);
-    siWrap.appendChild(siDefault);
-
-    // jusqu'au ...
-    var juWrap = document.createElement("label");
-    juWrap.className = "cond";
-    juWrap.innerHTML = '<span class="cond-key">jusqu\'au</span>';
-    var juInput = document.createElement("input");
-    juInput.type = "date";
-    juInput.className = "cond-input date";
-    juInput.addEventListener("input", function () {
-      row.until = juInput.value || null;
-      syncRow(row);
-    });
-    juWrap.appendChild(juInput);
-
-    wrap.appendChild(siWrap);
-    wrap.appendChild(juWrap);
-    return wrap;
+    p.appendChild(stepper);
+    p.appendChild(a);
+    p.appendChild(time);
+    p.appendChild(ok);
+    p.appendChild(cancel);
+    return p;
   }
 
   // ---------- Copier ----------
@@ -487,20 +445,26 @@
       el.copyStatus.classList.add("show");
       setTimeout(function () { el.copyStatus.classList.remove("show"); }, 1800);
     }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, fallbackCopy);
-    } else {
-      fallbackCopy();
-    }
-    function fallbackCopy() {
+    function fallback() {
       el.output.select();
       try { document.execCommand("copy"); done(); } catch (e) {}
       window.getSelection().removeAllRanges();
     }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
   }
 
   // ---------- Utilitaires ----------
-  function iconBtn(txt, title, cls) {
+  function td(cls) {
+    var c = document.createElement("td");
+    c.className = cls;
+    return c;
+  }
+
+  function btn(txt, title, cls) {
     var b = document.createElement("button");
     b.type = "button";
     b.className = cls;
