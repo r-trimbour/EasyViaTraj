@@ -8,17 +8,52 @@
   var R = window.EVT.render;
   var S = window.EVT.search;
 
-  // Médicaments fréquents (panneau de droite) : [nom, dosage] tels que dans data/drugs.json
+  /*
+   * Médicaments fréquents (panneau de droite), avec leur schéma classique pré-rempli.
+   *   name/strength : retrouvés dans data/drugs.json
+   *   s     : doses [matin, midi, soir] (0 = case non cochée) — absent = rien de coché
+   *   cond  : condition « si » pré-remplie
+   *   label : libellé imposé (prises non quotidiennes, ou dosage à préciser « … »)
+   * Ce ne sont que des valeurs par défaut : tout reste modifiable dans le tableau.
+   */
   var FAVORITES = [
-    ["Paracétamol", "1000"],
-    ["Néfopam (Acupan)", "20"],
-    ["Énoxaparine (Lovenox)", "4000"],
-    ["Apixaban (Eliquis)", "2.5"],
-    ["Apixaban (Eliquis)", "5"],
-    ["Insuline glargine (Lantus)", "100"],
-    ["Insuline asparte (Novorapid)", "100"],
-    ["Atorvastatine", "20"],
-    ["Rosuvastatine", "10"]
+    { cat: "Douleur", name: "Paracétamol", strength: "1000", s: [1, 1, 1] },
+    { cat: "Douleur", name: "Paracétamol", strength: "500", s: [2, 2, 2] },
+    { cat: "Douleur", name: "Néfopam (Acupan)", strength: "20", s: [1, 1, 1], cond: "EVA > 3" },
+
+    { cat: "Anticoagulants", name: "Énoxaparine (Lovenox)", strength: "4000", s: [0, 0, 1] },
+    { cat: "Anticoagulants", name: "Apixaban (Eliquis)", strength: "2.5", s: [1, 0, 1] },
+    { cat: "Anticoagulants", name: "Apixaban (Eliquis)", strength: "5", s: [1, 0, 1] },
+    { cat: "Anticoagulants", name: "Rivaroxaban (Xarelto)", strength: "10", s: [1, 0, 0] },
+    { cat: "Anticoagulants", name: "Acide acétylsalicylique (Kardégic)", strength: "75", s: [0, 1, 0] },
+
+    { cat: "Diabète", name: "Metformine", strength: "1000", s: [1, 0, 1] },
+    { cat: "Diabète", name: "Insuline glargine (Lantus)", strength: "100" },
+    { cat: "Diabète", name: "Insuline asparte (Novorapid)", strength: "100" },
+
+    { cat: "Cardio", name: "Bisoprolol", strength: "5", s: [1, 0, 0] },
+    { cat: "Cardio", name: "Amlodipine", strength: "5", s: [1, 0, 0] },
+    { cat: "Cardio", name: "Ramipril", strength: "5", s: [1, 0, 0] },
+    { cat: "Cardio", name: "Furosémide (Lasilix)", strength: "40", s: [1, 0, 0] },
+    { cat: "Cardio", name: "Atorvastatine", strength: "20", s: [0, 0, 1] },
+    { cat: "Cardio", name: "Rosuvastatine", strength: "10", s: [0, 0, 1] },
+
+    { cat: "Os", name: "Colécalciférol (Vitamine D3 / Uvedose)", strength: "100000",
+      label: "Colécalciférol (Uvedose), 100 000 UI (ampoule) : 1 tous les 3 mois" },
+    { cat: "Os", name: "Calcium / Vitamine D (Cacit D3)", strength: "500/1000", s: [0, 1, 0] },
+    { cat: "Os", name: "Acide alendronique (Fosamax)", strength: "70",
+      label: "Acide alendronique (Fosamax), 70 mg (cp) : 1 par semaine" },
+
+    { cat: "Digestif", name: "Oméprazole", strength: "20", s: [1, 0, 0] },
+    { cat: "Digestif", name: "Ésoméprazole", strength: "40", s: [1, 0, 0] },
+
+    { cat: "Psy / Neuro", name: "Zopiclone (Imovane)", strength: "7.5", s: [0, 0, 1] },
+    { cat: "Psy / Neuro", name: "Oxazépam (Séresta)", strength: "10", s: [0, 0, 1] },
+    { cat: "Psy / Neuro", name: "Donépézil (Aricept)", strength: "10", s: [0, 0, 1] },
+    { cat: "Psy / Neuro", name: "Mémantine (Ebixa)", strength: "20", s: [1, 0, 0] },
+
+    { cat: "Thyroïde", name: "Lévothyroxine (Levothyrox)", strength: "50", s: [1, 0, 0],
+      label: "Lévothyroxine (Levothyrox), … µg (cp)", text: "Lévothyroxine (dosage à préciser)" }
   ];
 
   var state = {
@@ -63,7 +98,7 @@
   }
 
   function loadDrugs() {
-    fetch("data/drugs.json?v=4")
+    fetch("data/drugs.json?v=5")
       .then(function (r) { return r.json(); })
       .then(function (data) {
         state.drugs = data.drugs || [];
@@ -81,15 +116,26 @@
   // ---------- Fréquents ----------
   function renderFavorites() {
     el.favList.innerHTML = "";
+    var lastCat = null;
     FAVORITES.forEach(function (f) {
-      var drug = state.drugs.find(function (d) { return d.name === f[0] && d.strength === f[1]; });
-      if (!drug) return;
+      var drug = state.drugs.find(function (d) { return d.name === f.name && d.strength === f.strength; });
+      if (!drug && !f.label) return;
+      if (f.cat !== lastCat) {
+        var h = document.createElement("div");
+        h.className = "fav-cat";
+        h.textContent = f.cat;
+        el.favList.appendChild(h);
+        lastCat = f.cat;
+      }
+      var label = f.label || R.buildLabel(drug);
+      var scheme = f.s ? f.s.join("-") : "";
       var b = document.createElement("button");
       b.type = "button";
       b.className = "fav-btn";
-      b.textContent = R.buildLabel(drug);
-      b.title = "Ajouter " + R.buildLabel(drug);
-      b.addEventListener("click", function () { addRow(R.buildLabel(drug)); });
+      b.innerHTML = '<span class="fav-name">' + escapeHtml(f.text || (drug ? R.buildLabel(drug) : label)) + "</span>" +
+        (scheme ? '<span class="fav-scheme">' + scheme + "</span>" : "");
+      b.title = "Ajouter : " + label + (scheme ? " — " + scheme : "") + (f.cond ? " si " + f.cond : "");
+      b.addEventListener("click", function () { addRow(label, f); });
       el.favList.appendChild(b);
     });
   }
@@ -153,8 +199,9 @@
   }
 
   // ---------- Modèle ----------
-  function makeRow(label) {
-    return {
+  // scheme (optionnel) : { s: [matin, midi, soir], cond: "..." } — schéma pré-rempli
+  function makeRow(label, scheme) {
+    var row = {
       id: "r" + (++state.seq),
       label: label,
       slots: {
@@ -168,10 +215,18 @@
       until: null,
       lastRendered: ""
     };
+    if (scheme && scheme.s) {
+      R.SLOT_ORDER.forEach(function (k, i) {
+        var d = scheme.s[i];
+        if (d > 0) { row.slots[k].active = true; row.slots[k].dose = d; }
+      });
+    }
+    if (scheme && scheme.cond) row.condition = scheme.cond;
+    return row;
   }
 
-  function addRow(label) {
-    var row = makeRow(label);
+  function addRow(label, scheme) {
+    var row = makeRow(label, scheme);
     row.lastRendered = R.renderLine(row);
     state.rows.push(row);
     el.rows.appendChild(buildRowEl(row));
@@ -266,6 +321,7 @@
     cond.type = "text";
     cond.className = "cell-input";
     cond.placeholder = "—";
+    cond.value = row.condition || "";
     cond.addEventListener("input", function () {
       row.condition = cond.value.trim() || null;
       syncRow(row);
@@ -322,6 +378,7 @@
       function (v) { slot.dose = v; syncRow(row); }
     );
     stepper.hidden = !slot.active;
+    cell.classList.toggle("is-on", slot.active);
 
     check.addEventListener("change", function () {
       slot.active = check.checked;

@@ -263,11 +263,26 @@ button, input { font: inherit; color: inherit; }
   letter-spacing: .4px;
   color: var(--ink-soft);
 }
-.fav-list { display: flex; flex-direction: column; gap: 3px; }
+.fav-list { display: flex; flex-direction: column; gap: 2px; }
+.fav-cat {
+  margin: 7px 0 2px;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--primary);
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 1px;
+}
+.fav-cat:first-child { margin-top: 0; }
+.fav-scheme { color: var(--ink-soft); font-size: .74rem; white-space: nowrap; }
 .fav-btn {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
   text-align: left;
-  padding: 4px 7px;
-  font-size: .82rem;
+  padding: 3px 6px;
+  font-size: .78rem;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background: #fafbfc;

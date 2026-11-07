@@ -59,6 +59,16 @@
     {"name": "Calcium / Vitamine D (Cacit D3)", "strength": "500/1000", "strengthUnit": "mg/UI", "form": "sachet", "class": "Supplémentation"},
     {"name": "Fer (Tardyferon)", "strength": "80", "strengthUnit": "mg", "form": "cp", "class": "Supplémentation", "aliases": ["sulfate ferreux"]},
     {"name": "Chlorure de potassium (Diffu-K)", "strength": "600", "strengthUnit": "mg", "form": "gélule", "class": "Supplémentation"},
-    {"name": "Prednisolone (Solupred)", "strength": "20", "strengthUnit": "mg", "form": "cp", "class": "Corticoïde", "aliases": ["métasulfobenzoate sodique de prednisolone"]}
+    {"name": "Prednisolone (Solupred)", "strength": "20", "strengthUnit": "mg", "form": "cp", "class": "Corticoïde", "aliases": ["métasulfobenzoate sodique de prednisolone"]},
+    {"name": "Lévothyroxine (Levothyrox)", "strength": "25", "strengthUnit": "µg", "form": "cp", "class": "Thyroïde", "aliases": ["lévothyroxine sodique", "Levothyrox", "L-Thyroxin", "T4"]},
+    {"name": "Lévothyroxine (Levothyrox)", "strength": "50", "strengthUnit": "µg", "form": "cp", "class": "Thyroïde", "aliases": ["lévothyroxine sodique", "Levothyrox", "L-Thyroxin", "T4"]},
+    {"name": "Lévothyroxine (Levothyrox)", "strength": "75", "strengthUnit": "µg", "form": "cp", "class": "Thyroïde", "aliases": ["lévothyroxine sodique", "Levothyrox", "L-Thyroxin", "T4"]},
+    {"name": "Lévothyroxine (Levothyrox)", "strength": "100", "strengthUnit": "µg", "form": "cp", "class": "Thyroïde", "aliases": ["lévothyroxine sodique", "Levothyrox", "L-Thyroxin", "T4"]},
+    {"name": "Lévothyroxine (Levothyrox)", "strength": "125", "strengthUnit": "µg", "form": "cp", "class": "Thyroïde", "aliases": ["lévothyroxine sodique", "Levothyrox", "L-Thyroxin", "T4"]},
+    {"name": "Acide alendronique (Fosamax)", "strength": "70", "strengthUnit": "mg", "form": "cp", "class": "Os (ostéoporose)", "aliases": ["alendronate", "alendronate monosodique", "Fosamax"]},
+    {"name": "Donépézil (Aricept)", "strength": "5", "strengthUnit": "mg", "form": "cp", "class": "Démence", "aliases": ["chlorhydrate de donépézil", "Aricept"]},
+    {"name": "Donépézil (Aricept)", "strength": "10", "strengthUnit": "mg", "form": "cp", "class": "Démence", "aliases": ["chlorhydrate de donépézil", "Aricept"]},
+    {"name": "Mémantine (Ebixa)", "strength": "10", "strengthUnit": "mg", "form": "cp", "class": "Démence", "aliases": ["chlorhydrate de mémantine", "Ebixa"]},
+    {"name": "Mémantine (Ebixa)", "strength": "20", "strengthUnit": "mg", "form": "cp", "class": "Démence", "aliases": ["chlorhydrate de mémantine", "Ebixa"]}
   ]
 }
