@@ -98,7 +98,7 @@
   }
 
   function loadDrugs() {
-    fetch("data/drugs.json?v=6")
+    fetch("data/drugs.json?v=7")
       .then(function (r) { return r.json(); })
       .then(function (data) {
         state.drugs = data.drugs || [];

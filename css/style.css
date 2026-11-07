@@ -50,8 +50,15 @@ button, input { font: inherit; color: inherit; }
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
   gap: 14px;
-  align-items: start;
+  align-items: stretch;   /* la colonne de gauche prend la hauteur du panneau Fréquents */
 }
+.left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.favorites { align-self: start; }
 
 /* ---------- Recherche ---------- */
 .search-box { position: relative; margin-bottom: 10px; }
@@ -309,6 +316,9 @@ button, input { font: inherit; color: inherit; }
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 10px 12px 12px;
+  flex: 1;                 /* remplit l'espace jusqu'au bas du panneau Fréquents */
+  display: flex;
+  flex-direction: column;
 }
 .output-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .output-head h2 { margin: 0; font-size: .95rem; font-weight: 700; }
@@ -345,7 +355,8 @@ button, input { font: inherit; color: inherit; }
 }
 .output {
   width: 100%;
-  min-height: 160px;
+  flex: 1;
+  min-height: 140px;
   margin-top: 8px;
   padding: 9px 11px;
   font-size: .98rem;

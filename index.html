@@ -6,7 +6,7 @@
   <title>EasyViaTraj — Convertisseur d'ordonnance</title>
   <meta name="description" content="Construire rapidement la liste des traitements à coller dans la zone de texte de ViaTrajectoire. Tout reste dans le navigateur, aucune donnée patient n'est transmise." />
   <!-- ?v= : à incrémenter à chaque modification de CSS/JS pour éviter le cache navigateur -->
-  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
   <header class="app-header">
@@ -19,6 +19,7 @@
 
   <main class="app-main">
     <div class="work">
+      <div class="left-col">
       <section class="builder" aria-label="Choix des médicaments">
         <div class="search-box">
           <input
@@ -53,13 +54,9 @@
         <p id="emptyHint" class="empty-hint">Aucun médicament. Recherchez-en un, saisissez un nom libre, ou cliquez un médicament fréquent →</p>
       </section>
 
-      <aside class="favorites" aria-label="Médicaments fréquents">
-        <h2>Fréquents</h2>
-        <div id="favList" class="fav-list"></div>
-      </aside>
-    </div>
-
-    <section class="output-zone" aria-label="Texte à coller">
+      <!-- Zone de sortie : dans la colonne de gauche, s'étire pour que son bas
+           s'aligne sur le bas du panneau Fréquents -->
+      <section class="output-zone" aria-label="Texte à coller">
       <div class="output-head">
         <h2>Texte à coller dans ViaTrajectoire</h2>
         <div class="output-actions">
@@ -70,15 +67,22 @@
       </div>
       <p id="syncHint" class="sync-hint" hidden>✏️ Zone modifiée à la main : vos ajouts sont conservés. « Régénérer » reconstruit tout à partir du tableau.</p>
       <textarea id="output" class="output" spellcheck="false" aria-label="Texte de l'ordonnance, modifiable"></textarea>
-    </section>
+      </section>
+      </div>
+
+      <aside class="favorites" aria-label="Médicaments fréquents">
+        <h2>Fréquents</h2>
+        <div id="favList" class="fav-list"></div>
+      </aside>
+    </div>
   </main>
 
   <footer class="app-footer">
     <span>Outil d'aide à la saisie — ne remplace pas la prescription médicale. Vérifiez toujours le texte avant de le coller.</span>
   </footer>
 
-  <script src="js/render.js?v=6"></script>
-  <script src="js/search.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/render.js?v=7"></script>
+  <script src="js/search.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>
