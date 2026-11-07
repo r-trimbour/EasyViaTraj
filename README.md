@@ -49,9 +49,24 @@ Le site est servi tel quel (fichiers statiques).
 
 ## Base de médicaments
 
-`data/drugs.json` : liste de départ curatée (post-fracture/prothèse + comorbidités
-courantes). À terme, elle peut être remplacée/complétée par un export filtré de la
-**BDPM** (Base de Données Publique des Médicaments, ANSM).
+`data/drugs.json` est généré depuis la **BDPM** (Base de Données Publique des
+Médicaments, ANSM) : ~5 700 lignes couvrant tous les médicaments à autorisation active
+et commercialisés en France (hors homéopathie). Nom en DCI, dosage, forme abrégée ;
+les génériques sont regroupés, et les noms commerciaux / sels servent d'alias de
+recherche (« Ozempic » → Sémaglutide, « chlorhydrate de metformine » → Metformine).
+
+Le panneau **Fréquents** est indépendant de la base (libellés et schémas définis en tête
+de `js/app.js`), orienté soins post-orthopédiques.
+
+**Mettre à jour la base** (quelques mois après, pour suivre les nouveaux médicaments) :
+
+```bash
+mkdir -p /tmp/bdpm && cd /tmp/bdpm
+curl -sSLO https://base-donnees-publique.medicaments.gouv.fr/download/file/CIS_bdpm.txt
+curl -sSLO https://base-donnees-publique.medicaments.gouv.fr/download/file/CIS_COMPO_bdpm.txt
+cd - && python3 -I data/scripts/build_drugs.py /tmp/bdpm/CIS_bdpm.txt /tmp/bdpm/CIS_COMPO_bdpm.txt data/drugs.json
+```
+Puis incrémenter `?v=` dans `index.html` et `js/app.js` avant de pousser.
 
 ## Structure
 
@@ -61,7 +76,8 @@ css/style.css        styles (clair + sombre, responsive)
 js/render.js         génération du texte (fonctions pures)
 js/search.js         recherche / autocomplétion
 js/app.js            logique d'interface
-data/drugs.json      base de médicaments
+data/drugs.json      base de médicaments (générée depuis la BDPM)
+data/scripts/        build_drugs.py : BDPM → drugs.json
 PLAN.md              plan détaillé du projet
 ```
 

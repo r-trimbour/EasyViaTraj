@@ -9,51 +9,52 @@
   var S = window.EVT.search;
 
   /*
-   * Médicaments fréquents (panneau de droite), avec leur schéma classique pré-rempli.
-   *   name/strength : retrouvés dans data/drugs.json
+   * Médicaments fréquents (panneau de droite) — orientés soins post-orthopédiques.
+   * Indépendants de data/drugs.json (BDPM) : chaque entrée porte son propre libellé.
+   *   label : texte de la ligne (« Nom, dosage (forme) », ou rythme non quotidien inclus)
    *   s     : doses [matin, midi, soir] (0 = case non cochée) — absent = rien de coché
    *   cond  : condition « si » pré-remplie
-   *   label : libellé imposé (prises non quotidiennes, ou dosage à préciser « … »)
+   *   text  : texte du bouton si différent du libellé
    * Ce ne sont que des valeurs par défaut : tout reste modifiable dans le tableau.
    */
   var FAVORITES = [
-    { cat: "Douleur", name: "Paracétamol", strength: "1000", s: [1, 1, 1] },
-    { cat: "Douleur", name: "Paracétamol", strength: "500", s: [2, 2, 2] },
-    { cat: "Douleur", name: "Néfopam (Acupan)", strength: "20", s: [1, 1, 1], cond: "EVA > 3" },
+    { cat: "Douleur", label: "Paracétamol, 1000 mg (cp)", s: [1, 1, 1] },
+    { cat: "Douleur", label: "Paracétamol, 500 mg (cp)", s: [2, 2, 2] },
+    { cat: "Douleur", label: "Néfopam (Acupan), 20 mg (ampoule)", s: [1, 1, 1], cond: "EVA > 3" },
 
-    { cat: "Anticoagulants", name: "Énoxaparine (Lovenox)", strength: "4000", s: [0, 0, 1] },
-    { cat: "Anticoagulants", name: "Apixaban (Eliquis)", strength: "2.5", s: [1, 0, 1] },
-    { cat: "Anticoagulants", name: "Apixaban (Eliquis)", strength: "5", s: [1, 0, 1] },
-    { cat: "Anticoagulants", name: "Rivaroxaban (Xarelto)", strength: "10", s: [1, 0, 0] },
-    { cat: "Anticoagulants", name: "Acide acétylsalicylique (Kardégic)", strength: "75", s: [0, 1, 0] },
+    { cat: "Anticoagulants", label: "Énoxaparine (Lovenox), 4000 UI (injection)", s: [0, 0, 1] },
+    { cat: "Anticoagulants", label: "Apixaban (Eliquis), 2.5 mg (cp)", s: [1, 0, 1] },
+    { cat: "Anticoagulants", label: "Apixaban (Eliquis), 5 mg (cp)", s: [1, 0, 1] },
+    { cat: "Anticoagulants", label: "Rivaroxaban (Xarelto), 10 mg (cp)", s: [1, 0, 0] },
+    { cat: "Anticoagulants", label: "Acide acétylsalicylique (Kardégic), 75 mg (sachet)", s: [0, 1, 0] },
 
-    { cat: "Diabète", name: "Metformine", strength: "1000", s: [1, 0, 1] },
-    { cat: "Diabète", name: "Insuline glargine (Lantus)", strength: "100" },
-    { cat: "Diabète", name: "Insuline asparte (Novorapid)", strength: "100" },
+    { cat: "Diabète", label: "Metformine, 1000 mg (cp)", s: [1, 0, 1] },
+    { cat: "Diabète", label: "Insuline glargine (Lantus), 100 UI/mL (injection)" },
+    { cat: "Diabète", label: "Insuline asparte (Novorapid), 100 UI/mL (injection)" },
 
-    { cat: "Cardio", name: "Bisoprolol", strength: "5", s: [1, 0, 0] },
-    { cat: "Cardio", name: "Amlodipine", strength: "5", s: [1, 0, 0] },
-    { cat: "Cardio", name: "Ramipril", strength: "5", s: [1, 0, 0] },
-    { cat: "Cardio", name: "Furosémide (Lasilix)", strength: "40", s: [1, 0, 0] },
-    { cat: "Cardio", name: "Atorvastatine", strength: "20", s: [0, 0, 1] },
-    { cat: "Cardio", name: "Rosuvastatine", strength: "10", s: [0, 0, 1] },
+    { cat: "Cardio", label: "Bisoprolol, 5 mg (cp)", s: [1, 0, 0] },
+    { cat: "Cardio", label: "Amlodipine, 5 mg (cp)", s: [1, 0, 0] },
+    { cat: "Cardio", label: "Ramipril, 5 mg (cp)", s: [1, 0, 0] },
+    { cat: "Cardio", label: "Furosémide (Lasilix), 40 mg (cp)", s: [1, 0, 0] },
+    { cat: "Cardio", label: "Atorvastatine, 20 mg (cp)", s: [0, 0, 1] },
+    { cat: "Cardio", label: "Rosuvastatine, 10 mg (cp)", s: [0, 0, 1] },
 
-    { cat: "Os", name: "Colécalciférol (Vitamine D3 / Uvedose)", strength: "100000",
-      label: "Colécalciférol (Uvedose), 100 000 UI (ampoule) : 1 tous les 3 mois" },
-    { cat: "Os", name: "Calcium / Vitamine D (Cacit D3)", strength: "500/1000", s: [0, 1, 0] },
-    { cat: "Os", name: "Acide alendronique (Fosamax)", strength: "70",
-      label: "Acide alendronique (Fosamax), 70 mg (cp) : 1 par semaine" },
+    { cat: "Os", label: "Colécalciférol (Uvedose), 100 000 UI (ampoule) : 1 tous les 3 mois",
+      text: "Colécalciférol (Uvedose), 100 000 UI" },
+    { cat: "Os", label: "Calcium / Vitamine D (Cacit D3), 500/1000 mg/UI (sachet)", s: [0, 1, 0] },
+    { cat: "Os", label: "Acide alendronique (Fosamax), 70 mg (cp) : 1 par semaine",
+      text: "Acide alendronique (Fosamax), 70 mg" },
 
-    { cat: "Digestif", name: "Oméprazole", strength: "20", s: [1, 0, 0] },
-    { cat: "Digestif", name: "Ésoméprazole", strength: "40", s: [1, 0, 0] },
+    { cat: "Digestif", label: "Oméprazole, 20 mg (gélule)", s: [1, 0, 0] },
+    { cat: "Digestif", label: "Ésoméprazole, 40 mg (cp)", s: [1, 0, 0] },
 
-    { cat: "Psy / Neuro", name: "Zopiclone (Imovane)", strength: "7.5", s: [0, 0, 1] },
-    { cat: "Psy / Neuro", name: "Oxazépam (Séresta)", strength: "10", s: [0, 0, 1] },
-    { cat: "Psy / Neuro", name: "Donépézil (Aricept)", strength: "10", s: [0, 0, 1] },
-    { cat: "Psy / Neuro", name: "Mémantine (Ebixa)", strength: "20", s: [1, 0, 0] },
+    { cat: "Psy / Neuro", label: "Zopiclone (Imovane), 7.5 mg (cp)", s: [0, 0, 1] },
+    { cat: "Psy / Neuro", label: "Oxazépam (Séresta), 10 mg (cp)", s: [0, 0, 1] },
+    { cat: "Psy / Neuro", label: "Donépézil (Aricept), 10 mg (cp)", s: [0, 0, 1] },
+    { cat: "Psy / Neuro", label: "Mémantine (Ebixa), 20 mg (cp)", s: [1, 0, 0] },
 
-    { cat: "Thyroïde", name: "Lévothyroxine (Levothyrox)", strength: "50", s: [1, 0, 0],
-      label: "Lévothyroxine (Levothyrox), … µg (cp)", text: "Lévothyroxine (dosage à préciser)" }
+    { cat: "Thyroïde", label: "Lévothyroxine (Levothyrox), … µg (cp)", s: [1, 0, 0],
+      text: "Lévothyroxine (dosage à préciser)" }
   ];
 
   var state = {
@@ -81,6 +82,7 @@
     el.copyStatus = $("copyStatus");
     el.syncHint = $("syncHint");
 
+    renderFavorites();
     loadDrugs();
 
     el.searchInput.addEventListener("input", onSearchInput);
@@ -98,12 +100,11 @@
   }
 
   function loadDrugs() {
-    fetch("data/drugs.json?v=7")
+    fetch("data/drugs.json?v=8")
       .then(function (r) { return r.json(); })
       .then(function (data) {
         state.drugs = data.drugs || [];
         state.index = S.buildIndex(state.drugs);
-        renderFavorites();
       })
       .catch(function () {
         el.searchResults.innerHTML =
@@ -118,8 +119,6 @@
     el.favList.innerHTML = "";
     var lastCat = null;
     FAVORITES.forEach(function (f) {
-      var drug = state.drugs.find(function (d) { return d.name === f.name && d.strength === f.strength; });
-      if (!drug && !f.label) return;
       if (f.cat !== lastCat) {
         var h = document.createElement("div");
         h.className = "fav-cat";
@@ -127,12 +126,12 @@
         el.favList.appendChild(h);
         lastCat = f.cat;
       }
-      var label = f.label || R.buildLabel(drug);
+      var label = f.label;
       var scheme = f.s ? f.s.join("-") : "";
       var b = document.createElement("button");
       b.type = "button";
       b.className = "fav-btn";
-      b.innerHTML = '<span class="fav-name">' + escapeHtml(f.text || (drug ? R.buildLabel(drug) : label)) + "</span>" +
+      b.innerHTML = '<span class="fav-name">' + escapeHtml(f.text || label) + "</span>" +
         (scheme ? '<span class="fav-scheme">' + scheme + "</span>" : "");
       b.title = "Ajouter : " + label + (scheme ? " — " + scheme : "") + (f.cond ? " si " + f.cond : "");
       b.addEventListener("click", function () { addRow(label, f); });
@@ -156,7 +155,7 @@
   function onSearchInput() {
     var q = el.searchInput.value;
     if (!q.trim()) { closeResults(); return; }
-    renderResults(S.search(state.index, q, 15), q.trim());
+    renderResults(S.search(state.index, q, 30), q.trim());
   }
 
   function onSearchKeydown(e) {
@@ -180,7 +179,7 @@
       div.innerHTML =
         '<span class="result-label">' + escapeHtml(label) +
         (alias ? ' <span class="result-alias">= ' + escapeHtml(alias) + "</span>" : "") + "</span>" +
-        '<span class="result-class">' + escapeHtml(item.drug.class || "") + "</span>";
+        '<span class="result-class">' + escapeHtml(item.drug.class || brands(item.drug)) + "</span>";
       div.addEventListener("click", function () { addRow(label); resetSearch(); });
       el.searchResults.appendChild(div);
     });
@@ -192,6 +191,14 @@
     free.addEventListener("click", function () { addFree(query); });
     el.searchResults.appendChild(free);
     el.searchResults.hidden = false;
+  }
+
+  // Noms commerciaux affichés à droite d'un résultat (hors noms de sels)
+  function brands(drug) {
+    return (drug.aliases || []).filter(function (a) {
+      return !/^(di|mono|hémi)?(chlorhydrate|bromhydrate|sulfate|fumarate|maléate|tartrate|bésilate|mésilate|citrate|phosphate|acétate|succinate|oxalate)\b/i.test(a) &&
+        a.indexOf("(") === -1;
+    }).slice(0, 3).join(", ");
   }
 
   function addFree(text) {
